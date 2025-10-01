@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Trip Tracker</string>
+    
+    <!-- Navigation -->
+    <string name="nav_trips">Trips</string>
+    <string name="nav_active_trip">Active Trip</string>
+    <string name="nav_trip_detail">Trip Detail</string>
+    <string name="nav_settings">Settings</string>
+    
+    <!-- Permissions -->
+    <string name="permission_location_title">Location Permission Required</string>
+    <string name="permission_location_message">Trip Tracker needs access to your location to track your trips automatically.</string>
+    <string name="permission_background_location_title">Background Location</string>
+    <string name="permission_background_location_message">To track trips while the app is in the background, please grant "Allow all the time" permission.</string>
+    <string name="permission_activity_title">Activity Recognition</string>
+    <string name="permission_activity_message">This helps detect when you start and stop driving.</string>
+    
+    <!-- Buttons -->
+    <string name="start_trip">Start Trip</string>
+    <string name="stop_trip">Stop Trip</string>
+    <string name="delete_trip">Delete Trip</string>
+    <string name="cancel">Cancel</string>
+    <string name="ok">OK</string>
+    
+    <!-- Trip Stats -->
+    <string name="distance">Distance</string>
+    <string name="duration">Duration</string>
+    <string name="avg_speed">Avg Speed</string>
+    <string name="max_speed">Max Speed</string>
+    
+    <!-- Notifications -->
+    <string name="notification_channel_name">Trip Tracking</string>
+    <string name="notification_channel_description">Shows active trip information</string>
+    <string name="notification_tracking_title">Tracking your trip</string>
+    <string name="notification_tracking_message">Tap to view details</string>
+</resources>
