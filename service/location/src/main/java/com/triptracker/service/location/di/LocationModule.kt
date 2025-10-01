@@ -6,6 +6,7 @@ import com.google.android.gms.location.LocationServices
 import com.triptracker.service.location.data.repository.LocationRepositoryImpl
 import com.triptracker.service.location.data.service.LocationClient
 import com.triptracker.service.location.data.service.LocationFilter
+import com.triptracker.service.location.data.service.LocationServiceManager
 import com.triptracker.service.location.domain.repository.LocationRepository
 import dagger.Module
 import dagger.Provides
@@ -48,5 +49,13 @@ object LocationModule {
         locationClient: LocationClient
     ): LocationRepository {
         return LocationRepositoryImpl(locationClient)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLocationServiceManager(
+        @ApplicationContext context: Context
+    ): LocationServiceManager {
+        return LocationServiceManager(context)
     }
 }

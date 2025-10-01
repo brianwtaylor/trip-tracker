@@ -32,6 +32,13 @@
     <!-- Notifications -->
     <string name="notification_channel_name">Trip Tracking</string>
     <string name="notification_channel_description">Shows active trip information</string>
-    <string name="notification_tracking_title">Tracking your trip</string>
-    <string name="notification_tracking_message">Tap to view details</string>
+    <string name="notification_tracking_title">Trip Tracking Active</string>
+    <string name="notification_tracking_message">GPS tracking in progress</string>
+    <string name="notification_trip_started">Trip Started</string>
+    <string name="notification_trip_started_message">Automatic trip tracking has begun</string>
+    <string name="notification_stop_tracking">Stop Tracking</string>
+    <string name="notification_high_accuracy">High accuracy</string>
+    <string name="notification_balanced_accuracy">Balanced</string>
+    <string name="notification_battery_saving">Battery saving</string>
+    <string name="notification_trip_in_progress">Trip in Progress</string>
 </resources>
