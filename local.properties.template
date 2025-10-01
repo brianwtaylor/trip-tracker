@@ -1,0 +1,13 @@
+# Local configuration file (machine-specific paths and API keys)
+# Copy this file to local.properties and fill in your actual values
+# NEVER commit local.properties to git!
+
+# Android SDK location
+sdk.dir=/path/to/your/Android/sdk
+
+# Google Maps API Key
+# Get your key from: https://console.cloud.google.com/
+# 1. Create a project
+# 2. Enable "Maps SDK for Android"
+# 3. Create Credentials -> API Key
+MAPS_API_KEY=YOUR_MAPS_API_KEY_HERE
