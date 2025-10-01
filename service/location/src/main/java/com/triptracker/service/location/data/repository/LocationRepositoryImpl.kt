@@ -24,7 +24,7 @@ class LocationRepositoryImpl @Inject constructor(
     override fun startLocationUpdates(accuracy: LocationAccuracy): Flow<Result<LocationUpdate>> {
         return locationClient.startLocationUpdates(accuracy)
             .map { result ->
-                when (result) {
+                when (r esult) {
                     is Result.Success -> {
                         val update = result.data
                         // Update statistics
