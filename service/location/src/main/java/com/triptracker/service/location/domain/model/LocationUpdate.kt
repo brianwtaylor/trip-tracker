@@ -1,6 +1,59 @@
 package com.triptracker.service.location.domain.model
 
 import android.location.Location
+import android.os.Parcel
+import android.os.Parcelable
+import com.triptracker.service.location.domain.model.LocationAccuracy
+
+/**
+ * Represents the current state of a trip for adaptive decisions
+ */
+data class TripState(
+    val tripId: String,
+    val startTime: Long,
+    val durationMs: Long,
+    val currentSpeed: Float, // km/h
+    val batteryLevel: Int,   // percentage
+    val roadType: RoadType = RoadType.UNKNOWN
+) : Parcelable {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readString()!!,
+        parcel.readLong(),
+        parcel.readLong(),
+        parcel.readFloat(),
+        parcel.readInt(),
+        RoadType.valueOf(parcel.readString()!!)
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(tripId)
+        parcel.writeLong(startTime)
+        parcel.writeLong(durationMs)
+        parcel.writeFloat(currentSpeed)
+        parcel.writeInt(batteryLevel)
+        parcel.writeString(roadType.name)
+    }
+
+    override fun describeContents(): Int = 0
+
+    companion object CREATOR : Parcelable.Creator<TripState> {
+        override fun createFromParcel(parcel: Parcel): TripState {
+            return TripState(parcel)
+        }
+
+        override fun newArray(size: Int): Array<TripState?> {
+            return arrayOfNulls(size)
+        }
+    }
+}
+
+enum class RoadType {
+    URBAN,      // City streets, frequent stops
+    HIGHWAY,    // High-speed roads, steady travel
+    RURAL,      // Country roads, variable conditions
+    UNKNOWN     // Cannot determine
+}
 
 /**
  * Enhanced location update with additional context for adaptive tracking
@@ -10,7 +63,33 @@ data class LocationUpdate(
     val accuracy: LocationAccuracy,
     val tripState: TripState? = null,
     val timestamp: Long = System.currentTimeMillis()
-) {
+) : Parcelable {
+
+    constructor(parcel: Parcel) : this(
+        parcel.readParcelable(Location::class.java.classLoader)!!,
+        LocationAccuracy.valueOf(parcel.readString()!!),
+        parcel.readParcelable(TripState::class.java.classLoader),
+        parcel.readLong()
+    )
+
+    override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeParcelable(location, flags)
+        parcel.writeString(accuracy.name)
+        parcel.writeParcelable(tripState, flags)
+        parcel.writeLong(timestamp)
+    }
+
+    override fun describeContents(): Int = 0
+
+    companion object CREATOR : Parcelable.Creator<LocationUpdate> {
+        override fun createFromParcel(parcel: Parcel): LocationUpdate {
+            return LocationUpdate(parcel)
+        }
+
+        override fun newArray(size: Int): Array<LocationUpdate?> {
+            return arrayOfNulls(size)
+        }
+    }
     /**
      * Convert to TripLocation domain model
      */
@@ -58,21 +137,3 @@ data class LocationUpdate(
     }
 }
 
-/**
- * Represents the current state of a trip for adaptive decisions
- */
-data class TripState(
-    val tripId: String,
-    val startTime: Long,
-    val durationMs: Long,
-    val currentSpeed: Float, // km/h
-    val batteryLevel: Int,   // percentage
-    val roadType: RoadType = RoadType.UNKNOWN
-)
-
-enum class RoadType {
-    URBAN,      // City streets, frequent stops
-    HIGHWAY,    // High-speed roads, steady travel
-    RURAL,      // Country roads, variable conditions
-    UNKNOWN     // Cannot determine
-}

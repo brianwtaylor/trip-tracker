@@ -7,6 +7,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.triptracker.ui.screens.PermissionsScreen
 
 /**
  * Main navigation graph for the app
@@ -70,10 +71,16 @@ fun TripTrackerNavGraph(
             )
         }
         
-        // Permissions Screen (shown on first launch)
+        // Permissions Screen (shown when permissions needed)
         composable(NavigationRoutes.PERMISSIONS) {
-            PermissionsScreenPlaceholder(
+            PermissionsScreen(
                 onPermissionsGranted = {
+                    navController.navigate(NavigationRoutes.TRIPS_LIST) {
+                        popUpTo(NavigationRoutes.PERMISSIONS) { inclusive = true }
+                    }
+                },
+                onPermissionsDenied = {
+                    // Handle permission denial - maybe show a message or exit
                     navController.navigate(NavigationRoutes.TRIPS_LIST) {
                         popUpTo(NavigationRoutes.PERMISSIONS) { inclusive = true }
                     }
@@ -116,9 +123,3 @@ private fun SettingsScreenPlaceholder(
     androidx.compose.material3.Text("Settings Screen - Coming Soon")
 }
 
-@Composable
-private fun PermissionsScreenPlaceholder(
-    onPermissionsGranted: () -> Unit
-) {
-    androidx.compose.material3.Text("Permissions Screen - Coming Soon")
-}

@@ -28,8 +28,11 @@ android {
 dependencies {
     implementation(project(":core:common"))
     implementation(project(":core:domain"))
+    implementation(project(":service:activity"))
     
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.service)
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
     

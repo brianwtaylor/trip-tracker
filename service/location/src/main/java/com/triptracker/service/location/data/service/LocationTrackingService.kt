@@ -15,6 +15,7 @@ import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.triptracker.core.common.constants.Constants
 import com.triptracker.core.common.result.Result
+import com.triptracker.service.activity.domain.usecase.ManageActivityRecognitionUseCase
 import com.triptracker.service.location.domain.model.LocationAccuracy
 import com.triptracker.service.location.domain.model.LocationUpdate
 import com.triptracker.service.location.domain.model.TripState
@@ -40,6 +41,9 @@ class LocationTrackingService : LifecycleService() {
 
     @Inject
     lateinit var locationClient: LocationClient
+
+    @Inject
+    lateinit var activityRecognitionUseCase: ManageActivityRecognitionUseCase
 
     // Service state management
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -127,6 +131,9 @@ class LocationTrackingService : LifecycleService() {
         // Start location updates
         startLocationUpdates()
 
+        // Start activity recognition for driver/passenger detection
+        startActivityRecognition()
+
         // Broadcast service started
         broadcastServiceState(true)
     }
@@ -157,6 +164,23 @@ class LocationTrackingService : LifecycleService() {
                 .onEach { result -> handleLocationResult(result) }
                 .catch { error -> handleLocationError(error) }
                 .collect()
+        }
+    }
+
+    /**
+     * Start activity recognition for driver/passenger detection
+     */
+    private fun startActivityRecognition() {
+        serviceScope.launch {
+            try {
+                activityRecognitionUseCase.startActivityRecognition()
+                // Activity recognition flow will run in background
+                // Results are available through the use case
+            } catch (e: Exception) {
+                // Log error but don't stop location tracking
+                // Activity recognition is enhancement, not core functionality
+                e.printStackTrace()
+            }
         }
     }
 
@@ -298,6 +322,9 @@ class LocationTrackingService : LifecycleService() {
         locationJob?.cancel()
         locationJob = null
 
+        // Stop activity recognition
+        stopActivityRecognition()
+
         // Stop foreground service
         stopForegroundService()
 
@@ -307,6 +334,13 @@ class LocationTrackingService : LifecycleService() {
 
         // Broadcast service stopped
         broadcastServiceState(false)
+    }
+
+    /**
+     * Stop activity recognition
+     */
+    private fun stopActivityRecognition() {
+        activityRecognitionUseCase.stopActivityRecognition()
     }
 
     /**
