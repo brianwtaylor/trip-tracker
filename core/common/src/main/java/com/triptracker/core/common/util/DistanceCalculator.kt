@@ -60,16 +60,16 @@ object DistanceCalculator {
     /**
      * Format distance for display
      * @param meters distance in meters
-     * @param useMetric true for kilometers, false for miles
+     * @param useImperial true for miles, false for kilometers
      * @return formatted string like "5.2 mi" or "8.4 km"
      */
-    fun formatDistance(meters: Double, useMetric: Boolean = false): String {
-        return if (useMetric) {
-            val km = metersToKilometers(meters)
-            "%.1f km".format(km)
-        } else {
+    fun formatDistance(meters: Double, useImperial: Boolean = true): String {
+        return if (useImperial) {
             val miles = metersToMiles(meters)
             "%.1f mi".format(miles)
+        } else {
+            val km = metersToKilometers(meters)
+            "%.1f km".format(km)
         }
     }
 }

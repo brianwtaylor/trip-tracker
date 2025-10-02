@@ -9,7 +9,7 @@ import android.os.PowerManager
 import android.util.Log
 import com.triptracker.core.common.result.Result
 import com.triptracker.service.activity.domain.model.SensorData
-import com.triptracker.service.activity.domain.model.UserRole
+import com.triptracker.core.domain.model.UserRole
 import com.triptracker.service.activity.domain.repository.ActivityRepository
 import com.triptracker.service.activity.domain.usecase.DetectUserRoleUseCase
 import com.triptracker.service.activity.domain.usecase.UserRoleClassification

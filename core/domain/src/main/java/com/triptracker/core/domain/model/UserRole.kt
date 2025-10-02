@@ -1,8 +1,11 @@
-package com.triptracker.service.activity.domain.model
+package com.triptracker.core.domain.model
 
 /**
  * Represents the user's role in the vehicle (driver or passenger)
  * Used for insurance and risk assessment purposes
+ *
+ * This enum is in the core domain module so it can be used by UI components
+ * without depending on service implementations.
  */
 enum class UserRole {
     DRIVER,

@@ -2,7 +2,7 @@ package com.triptracker.service.activity.domain.usecase
 
 import com.triptracker.core.common.result.Result
 import com.triptracker.service.activity.domain.model.SensorData
-import com.triptracker.service.activity.domain.model.UserRole
+import com.triptracker.core.domain.model.UserRole
 import com.triptracker.service.activity.domain.repository.ActivityRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map

@@ -2,54 +2,54 @@ package com.triptracker.core.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Light theme colors
-val Primary = Color(0xFF2196F3)
+// Light theme colors (Current Cursor: Grey/Black tones)
+val Primary = Color(0xFF6366F1)  // Muted indigo (subtle accent)
 val OnPrimary = Color(0xFFFFFFFF)
-val PrimaryContainer = Color(0xFFBBDEFB)
-val OnPrimaryContainer = Color(0xFF0D47A1)
+val PrimaryContainer = Color(0xFFEEF0FF)
+val OnPrimaryContainer = Color(0xFF1E1B4B)
 
-val Secondary = Color(0xFF03DAC6)
-val OnSecondary = Color(0xFF000000)
-val SecondaryContainer = Color(0xFFB2DFDB)
-val OnSecondaryContainer = Color(0xFF004D40)
+val Secondary = Color(0xFF64748B)  // Slate grey accent
+val OnSecondary = Color(0xFFFFFFFF)
+val SecondaryContainer = Color(0xFFF1F5F9)
+val OnSecondaryContainer = Color(0xFF1E293B)
 
-val Tertiary = Color(0xFFFF9800)
+val Tertiary = Color(0xFF475569)  // Darker slate
 val OnTertiary = Color(0xFFFFFFFF)
-val TertiaryContainer = Color(0xFFFFE0B2)
-val OnTertiaryContainer = Color(0xFFE65100)
+val TertiaryContainer = Color(0xFFF8FAFC)
+val OnTertiaryContainer = Color(0xFF0F172A)
 
-val Background = Color(0xFFFAFAFA)
-val OnBackground = Color(0xFF1C1B1F)
+val Background = Color(0xFFFEFEFE)  // Near white
+val OnBackground = Color(0xFF0F0F0F)
 val Surface = Color(0xFFFFFFFF)
-val OnSurface = Color(0xFF1C1B1F)
+val OnSurface = Color(0xFF0F0F0F)
 
-val Error = Color(0xFFB00020)
+val Error = Color(0xFFEF4444)  // Muted red
 val OnError = Color(0xFFFFFFFF)
-val ErrorContainer = Color(0xFFFDEDED)
-val OnErrorContainer = Color(0xFF8C0009)
+val ErrorContainer = Color(0xFFFEE2E2)
+val OnErrorContainer = Color(0xFF991B1B)
 
-// Dark theme colors
-val DarkPrimary = Color(0xFF64B5F6)
-val DarkOnPrimary = Color(0xFF001D35)
-val DarkPrimaryContainer = Color(0xFF004B7C)
-val DarkOnPrimaryContainer = Color(0xFFCCE5FF)
+// Dark theme colors (Current Cursor: Pure grey/black tones)
+val DarkPrimary = Color(0xFF818CF8)  // Muted indigo for dark
+val DarkOnPrimary = Color(0xFF0F0F0F)
+val DarkPrimaryContainer = Color(0xFF1E1B4B)
+val DarkOnPrimaryContainer = Color(0xFFEEF0FF)
 
-val DarkSecondary = Color(0xFF4DD0E1)
-val DarkOnSecondary = Color(0xFF003D3C)
-val DarkSecondaryContainer = Color(0xFF006D68)
-val DarkOnSecondaryContainer = Color(0xFFA7F3EE)
+val DarkSecondary = Color(0xFF94A3B8)  // Light slate grey
+val DarkOnSecondary = Color(0xFF0F0F0F)
+val DarkSecondaryContainer = Color(0xFF1E293B)
+val DarkOnSecondaryContainer = Color(0xFFF1F5F9)
 
-val DarkTertiary = Color(0xFFFFAB40)
-val DarkOnTertiary = Color(0xFF4E2500)
-val DarkTertiaryContainer = Color(0xFF9C4A00)
-val DarkOnTertiaryContainer = Color(0xFFFFD699)
+val DarkTertiary = Color(0xFF64748B)  // Medium slate grey
+val DarkOnTertiary = Color(0xFFFEFEFE)
+val DarkTertiaryContainer = Color(0xFF0F172A)
+val DarkOnTertiaryContainer = Color(0xFFF8FAFC)
 
-val DarkBackground = Color(0xFF121212)
-val DarkOnBackground = Color(0xFFE6E1E5)
-val DarkSurface = Color(0xFF1E1E1E)
-val DarkOnSurface = Color(0xFFE6E1E5)
+val DarkBackground = Color(0xFF0A0A0A)  // Near pure black
+val DarkOnBackground = Color(0xFFF8FAFC)
+val DarkSurface = Color(0xFF111111)  // Very dark grey
+val DarkOnSurface = Color(0xFFF8FAFC)
 
-val DarkError = Color(0xFFCF6679)
-val DarkOnError = Color(0xFF690005)
-val DarkErrorContainer = Color(0xFF93000A)
-val DarkOnErrorContainer = Color(0xFFFFDAD6)
+val DarkError = Color(0xFFF87171)  // Muted red for dark
+val DarkOnError = Color(0xFF0A0A0A)
+val DarkErrorContainer = Color(0xFF450A0A)
+val DarkOnErrorContainer = Color(0xFFFEE2E2)
