@@ -25,22 +25,23 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.triptracker.core.common.result.Result
 import com.triptracker.core.domain.model.UserRole
 import com.triptracker.core.ui.components.RoleIndicator
-import com.triptracker.service.location.domain.usecase.ManageLocationServiceUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.triptracker.service.database.TripRepository
 import com.triptracker.service.database.entity.TripEntity
 import com.triptracker.service.database.entity.TripWithLocations
 import com.triptracker.service.database.entity.LocationEntity
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.triptracker.service.location.domain.model.LocationAccuracy
+import com.triptracker.service.location.domain.repository.LocationRepository
+import com.triptracker.service.location.domain.usecase.ManageLocationServiceUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -562,7 +563,9 @@ private fun formatSpeed(speedKmh: Float): String {
 // ViewModel for Active Trip Screen
 @HiltViewModel
 class ActiveTripViewModel @Inject constructor(
-    private val tripRepository: com.triptracker.service.database.TripRepository
+    private val tripRepository: com.triptracker.service.database.TripRepository,
+    private val locationRepository: com.triptracker.service.location.domain.repository.LocationRepository,
+    private val locationServiceManager: ManageLocationServiceUseCase
 ) : ViewModel() {
 
     private val _state = MutableStateFlow<ActiveTripState>(ActiveTripState.Idle)
@@ -570,8 +573,24 @@ class ActiveTripViewModel @Inject constructor(
 
     private var currentTripId: String? = null
     private var startTime: Long = 0
+    private var locationTrackingJob: Job? = null
+    private val tripLocations = mutableListOf<LocationEntity>()
+    private var lastLocation: android.location.Location? = null
+    private var totalDistance: Double = 0.0
+    private var maxSpeed: Float = 0f
+    private var speedReadings = mutableListOf<Float>()
 
     fun startTrip() {
+        // Reset trip data
+        tripLocations.clear()
+        lastLocation = null
+        totalDistance = 0.0
+        maxSpeed = 0f
+        speedReadings.clear()
+
+        startTime = System.currentTimeMillis()
+        currentTripId = "trip_${startTime}"
+
         _state.value = ActiveTripState.Recording(
             durationMs = 0,
             distanceKm = 0f,
@@ -581,77 +600,122 @@ class ActiveTripViewModel @Inject constructor(
             roleConfidence = 0f
         )
 
-        // TODO: Start location tracking when service is implemented
-        // locationServiceManager.startLocationTracking()
-
-        startTime = System.currentTimeMillis()
-        currentTripId = "trip_${System.currentTimeMillis()}"
-
-        // Start periodic mock updates for demo purposes
-        viewModelScope.launch {
-            while (_state.value is ActiveTripState.Recording) {
-                delay(2000) // Update every 2 seconds
-
-                val currentTime = System.currentTimeMillis()
-                val duration = currentTime - startTime
-
-                // Mock realistic data progression
-                       val mockDistance = (duration / 1000.0 / 60.0) * 0.5 // ~18 mph average
-                       val mockSpeed = 15f + (4f * Math.random().toFloat()) // 15-19 mph variation
-                val mockLocations = (duration / 1000).toInt() / 5 // Location every 5 seconds
-                val mockRole = if (Math.random() > 0.3) UserRole.DRIVER else UserRole.PASSENGER
-                val mockConfidence = 0.7f + (0.2f * Math.random().toFloat()) // 70-90% confidence
-
-                _state.value = ActiveTripState.Recording(
-                    durationMs = duration,
-                    distanceKm = mockDistance.toFloat(),
-                    averageSpeedKmh = mockSpeed,
-                    locationCount = mockLocations,
-                    detectedRole = mockRole,
-                    roleConfidence = mockConfidence
-                )
-            }
+        // Start location tracking
+        locationTrackingJob = viewModelScope.launch {
+            locationRepository.startLocationUpdates(LocationAccuracy.HIGH_ACCURACY)
+                .onEach { result ->
+                    when (result) {
+                        is Result.Success -> {
+                            val locationUpdate = result.data
+                            processLocationUpdate(locationUpdate)
+                        }
+                        is Result.Error -> {
+                            // Handle location error - could show user warning
+                            // For now, just continue
+                        }
+                        Result.Loading -> {
+                            // Location service initializing
+                        }
+                    }
+                }
+                .collect()
         }
+    }
+
+    private fun processLocationUpdate(locationUpdate: com.triptracker.service.location.domain.model.LocationUpdate) {
+        val location = locationUpdate.location
+
+        // Skip invalid locations
+        if (!locationUpdate.hasMinimumQuality()) return
+
+        // Calculate distance from last location
+        lastLocation?.let { last ->
+            val distanceIncrement = calculateDistance(last, location)
+            totalDistance += distanceIncrement
+        }
+
+        // Update speed tracking
+        val speedMps = location.speed
+        if (speedMps > 0) {
+            speedReadings.add(speedMps)
+            maxSpeed = maxOf(maxSpeed, speedMps)
+        }
+
+        // Store location data
+        val locationEntity = LocationEntity(
+            id = 0, // Auto-generated by Room
+            tripId = currentTripId ?: return,
+            latitude = location.latitude,
+            longitude = location.longitude,
+            timestamp = location.time,
+            speed = speedMps,
+            accuracy = location.accuracy
+        )
+        tripLocations.add(locationEntity)
+
+        // Update last location
+        lastLocation = location
+
+        // Calculate current metrics
+        val currentTime = System.currentTimeMillis()
+        val duration = currentTime - startTime
+        val averageSpeed = if (speedReadings.isNotEmpty()) {
+            speedReadings.average().toFloat()
+        } else 0f
+
+        // Update UI state
+        _state.value = ActiveTripState.Recording(
+            durationMs = duration,
+            distanceKm = (totalDistance / 1000.0).toFloat(), // Convert to km for state (will be converted to miles in UI)
+            averageSpeedKmh = averageSpeed * 3.6f, // Convert m/s to km/h for state (will be converted to mph in UI)
+            locationCount = tripLocations.size,
+            detectedRole = UserRole.UNKNOWN, // TODO: Integrate activity recognition
+            roleConfidence = 0f
+        )
+    }
+
+    private fun calculateDistance(loc1: android.location.Location, loc2: android.location.Location): Double {
+        val results = FloatArray(1)
+        android.location.Location.distanceBetween(
+            loc1.latitude, loc1.longitude,
+            loc2.latitude, loc2.longitude,
+            results
+        )
+        return results[0].toDouble()
     }
 
     fun stopTrip() {
         _state.value = ActiveTripState.Saving
 
-        // TODO: Stop location tracking when service is implemented
-        // locationServiceManager.stopLocationTracking()
+        // Stop location tracking
+        locationTrackingJob?.cancel()
+        locationTrackingJob = null
+
+        // Stop location service
+        locationRepository.stopLocationUpdates()
 
         // Save trip to database
         viewModelScope.launch {
             try {
                 val endTime = System.currentTimeMillis()
+                val averageSpeed = if (speedReadings.isNotEmpty()) {
+                    speedReadings.average().toFloat()
+                } else 0f
 
-                // Create mock trip entity - replace with real data when location service is connected
+                // Create trip entity with real data
                 val tripEntity = TripEntity(
                     id = currentTripId ?: "unknown",
                     startTime = startTime,
                     endTime = endTime,
-                    distance = 0.0, // TODO: Calculate from location data
-                    averageSpeed = 0.0, // TODO: Calculate from location data
-                    maxSpeed = 0.0, // TODO: Calculate from location data
+                    distance = totalDistance / 1000.0, // Convert meters to kilometers for storage
+                    averageSpeed = averageSpeed * 3.6, // Convert m/s to km/h for storage
+                    maxSpeed = maxSpeed * 3.6, // Convert m/s to km/h for storage
                     status = "COMPLETED"
-                )
-
-                // Create mock location entities - replace with real GPS data
-                val mockLocations = listOf(
-                    LocationEntity(
-                        id = 1,
-                        tripId = currentTripId ?: "unknown",
-                        latitude = 0.0, // TODO: Real GPS coordinates
-                        longitude = 0.0,
-                        timestamp = startTime,
-                        speed = 0.0f,
-                        accuracy = 0.0f
-                    )
                 )
 
                 val tripWithLocations = TripWithLocations(
                     trip = tripEntity,
-                    locations = mockLocations
+                    locations = tripLocations
                 )
 
                 tripRepository.saveTrip(tripWithLocations)
@@ -665,6 +729,12 @@ class ActiveTripViewModel @Inject constructor(
                 )
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        locationTrackingJob?.cancel()
+        locationRepository.stopLocationUpdates()
     }
 }
 
