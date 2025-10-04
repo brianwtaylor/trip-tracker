@@ -3,9 +3,12 @@ package com.triptracker.service.database.di
 import android.content.Context
 import androidx.room.Room
 import com.triptracker.core.common.constants.Constants
+import com.triptracker.service.database.TripRepository
+import com.triptracker.service.database.TripRepositoryImpl
 import com.triptracker.service.database.TripDatabase
 import com.triptracker.service.database.dao.LocationDao
 import com.triptracker.service.database.dao.TripDao
+import dagger.Binds
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -42,4 +45,13 @@ object DatabaseModule {
     fun provideLocationDao(database: TripDatabase): LocationDao {
         return database.locationDao()
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class RepositoryModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindTripRepository(impl: TripRepositoryImpl): TripRepository
 }

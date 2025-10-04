@@ -3,7 +3,7 @@ package com.triptracker.service.activity.domain.usecase
 import com.triptracker.core.common.result.Result
 import com.triptracker.core.domain.model.Trip
 import com.triptracker.core.domain.model.TripStatus
-import com.triptracker.service.activity.domain.model.UserRole
+import com.triptracker.core.domain.model.UserRole
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map

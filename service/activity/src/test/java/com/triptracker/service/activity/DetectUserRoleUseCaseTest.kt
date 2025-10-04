@@ -1,7 +1,7 @@
 package com.triptracker.service.activity
 
 import com.triptracker.service.activity.domain.model.SensorData
-import com.triptracker.service.activity.domain.model.UserRole
+import com.triptracker.core.domain.model.UserRole
 import com.triptracker.service.activity.domain.usecase.DetectUserRoleUseCase
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals

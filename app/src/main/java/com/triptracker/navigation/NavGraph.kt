@@ -7,7 +7,10 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
+import com.triptracker.ui.screens.ActiveTripScreen
 import com.triptracker.ui.screens.PermissionsScreen
+import com.triptracker.ui.screens.SettingsScreen
+import com.triptracker.ui.screens.TripsListScreen
 
 /**
  * Main navigation graph for the app
@@ -25,7 +28,7 @@ fun TripTrackerNavGraph(
     ) {
         // Trips List Screen
         composable(NavigationRoutes.TRIPS_LIST) {
-            TripsListScreenPlaceholder(
+            TripsListScreen(
                 onTripClick = { tripId ->
                     navController.navigate(NavigationRoutes.tripDetail(tripId))
                 },
@@ -54,51 +57,72 @@ fun TripTrackerNavGraph(
         
         // Active Trip Screen
         composable(NavigationRoutes.ACTIVE_TRIP) {
-            ActiveTripScreenPlaceholder(
-                onBackClick = { navController.navigateUp() },
+            ActiveTripScreen(
                 onTripComplete = { tripId ->
                     navController.navigate(NavigationRoutes.tripDetail(tripId)) {
                         popUpTo(NavigationRoutes.TRIPS_LIST)
                     }
-                }
+                },
+                onBackClick = { navController.navigateUp() }
             )
         }
         
         // Settings Screen
         composable(NavigationRoutes.SETTINGS) {
-            SettingsScreenPlaceholder(
-                onBackClick = { navController.navigateUp() }
+            SettingsScreen(
+                onBackClick = { navController.navigateUp() },
+                onPermissionsClick = {
+                    // Navigate to permissions in management mode
+                    navController.navigate("${NavigationRoutes.PERMISSIONS}?management=true")
+                }
             )
         }
         
         // Permissions Screen (shown when permissions needed)
-        composable(NavigationRoutes.PERMISSIONS) {
+        composable(
+            route = NavigationRoutes.PERMISSIONS,
+            arguments = listOf(
+                navArgument("management") {
+                    type = NavType.BoolType
+                    defaultValue = false
+                }
+            )
+        ) { backStackEntry ->
+            val isManagementMode = backStackEntry.arguments?.getBoolean("management") ?: false
+
             PermissionsScreen(
                 onPermissionsGranted = {
-                    navController.navigate(NavigationRoutes.TRIPS_LIST) {
-                        popUpTo(NavigationRoutes.PERMISSIONS) { inclusive = true }
+                    if (isManagementMode) {
+                        // In management mode, just go back to settings
+                        navController.navigateUp()
+                    } else {
+                        // Initial setup: go to trips list
+                        navController.navigate(NavigationRoutes.TRIPS_LIST) {
+                            popUpTo(NavigationRoutes.PERMISSIONS) { inclusive = true }
+                        }
                     }
                 },
                 onPermissionsDenied = {
-                    // Handle permission denial - maybe show a message or exit
-                    navController.navigate(NavigationRoutes.TRIPS_LIST) {
-                        popUpTo(NavigationRoutes.PERMISSIONS) { inclusive = true }
+                    if (isManagementMode) {
+                        // In management mode, just go back to settings
+                        navController.navigateUp()
+                    } else {
+                        // Initial setup: handle denial
+                        navController.navigate(NavigationRoutes.TRIPS_LIST) {
+                            popUpTo(NavigationRoutes.PERMISSIONS) { inclusive = true }
+                        }
                     }
-                }
+                },
+                isManagementMode = isManagementMode,
+                onBackClick = if (isManagementMode) {
+                    { navController.navigateUp() }
+                } else null
             )
         }
     }
 }
 
 // Placeholder composables - these will be replaced with actual implementations
-@Composable
-private fun TripsListScreenPlaceholder(
-    onTripClick: (String) -> Unit,
-    onStartTripClick: () -> Unit,
-    onSettingsClick: () -> Unit
-) {
-    androidx.compose.material3.Text("Trips List Screen - Coming Soon")
-}
 
 @Composable
 private fun TripDetailScreenPlaceholder(
@@ -108,18 +132,5 @@ private fun TripDetailScreenPlaceholder(
     androidx.compose.material3.Text("Trip Detail Screen - Trip ID: $tripId")
 }
 
-@Composable
-private fun ActiveTripScreenPlaceholder(
-    onBackClick: () -> Unit,
-    onTripComplete: (String) -> Unit
-) {
-    androidx.compose.material3.Text("Active Trip Screen - Coming Soon")
-}
 
-@Composable
-private fun SettingsScreenPlaceholder(
-    onBackClick: () -> Unit
-) {
-    androidx.compose.material3.Text("Settings Screen - Coming Soon")
-}
 

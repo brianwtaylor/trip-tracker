@@ -139,9 +139,9 @@ class LocationFilter @Inject constructor() {
     private fun passesSpeedConsistencyFilter(newLocation: Location, lastLocation: Location): Boolean {
         val distance = newLocation.distanceTo(lastLocation)
         val timeDeltaHours = (newLocation.time - lastLocation.time) / 3600000.0
-        val calculatedSpeed = distance / 1000.0 / timeDeltaHours // km/h
+        val calculatedSpeed = distance / 1000.0 / timeDeltaHours // km/h (internal calculation)
 
-        // If calculated speed is impossibly high (> 300 km/h), reject
+        // If calculated speed is impossibly high (> 186 mph), reject
         if (calculatedSpeed > 300) {
             return false
         }
@@ -151,7 +151,7 @@ class LocationFilter @Inject constructor() {
         val speedDifference = abs(calculatedSpeed - reportedSpeed)
 
         // Allow reasonable speed differences (GPS can be noisy)
-        return speedDifference < 50 // 50 km/h tolerance
+        return speedDifference < 50 // ~31 mph tolerance
     }
 
     /**

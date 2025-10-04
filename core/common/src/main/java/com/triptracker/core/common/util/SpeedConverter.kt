@@ -21,16 +21,16 @@ object SpeedConverter {
     /**
      * Format speed for display
      * @param metersPerSecond speed in m/s
-     * @param useMetric true for km/h, false for mph
+     * @param useImperial true for mph, false for km/h
      * @return formatted string like "65 mph" or "105 km/h"
      */
-    fun formatSpeed(metersPerSecond: Float, useMetric: Boolean = false): String {
-        return if (useMetric) {
-            val kmh = metersPerSecondToKmh(metersPerSecond)
-            "${kmh.toInt()} km/h"
-        } else {
+    fun formatSpeed(metersPerSecond: Float, useImperial: Boolean = true): String {
+        return if (useImperial) {
             val mph = metersPerSecondToMph(metersPerSecond)
             "${mph.toInt()} mph"
+        } else {
+            val kmh = metersPerSecondToKmh(metersPerSecond)
+            "${kmh.toInt()} km/h"
         }
     }
     

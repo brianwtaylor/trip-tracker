@@ -12,7 +12,7 @@ data class TripState(
     val tripId: String,
     val startTime: Long,
     val durationMs: Long,
-    val currentSpeed: Float, // km/h
+    val currentSpeed: Float, // mph (display units)
     val batteryLevel: Int,   // percentage
     val roadType: RoadType = RoadType.UNKNOWN
 ) : Parcelable {

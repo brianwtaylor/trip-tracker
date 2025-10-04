@@ -1,27 +1,89 @@
 package com.triptracker.ui.screens
 
 import android.Manifest
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
-import com.triptracker.R
+
+/**
+ * Individual permission item component
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PermissionItem(
+    title: String,
+    description: String,
+    granted: Boolean,
+    onRequestClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Medium
+                )
+
+                if (granted) {
+                    Icon(
+                        imageVector = Icons.Filled.CheckCircle,
+                        contentDescription = "Granted",
+                        tint = Color(0xFF4CAF50), // Green
+                        modifier = Modifier.size(24.dp)
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Filled.Clear,
+                        contentDescription = "Not granted",
+                        tint = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (!granted) {
+                Button(
+                    onClick = onRequestClick,
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+                ) {
+                    Text("Grant Permission")
+                }
+            }
+        }
+    }
+}
 
 /**
  * Screen for requesting necessary permissions for trip tracking
@@ -30,7 +92,9 @@ import com.triptracker.R
 @Composable
 fun PermissionsScreen(
     onPermissionsGranted: () -> Unit,
-    onPermissionsDenied: () -> Unit
+    onPermissionsDenied: () -> Unit,
+    isManagementMode: Boolean = false,
+    onBackClick: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val scrollState = rememberScrollState()
@@ -51,16 +115,13 @@ fun PermissionsScreen(
             backgroundLocationGranted = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
             ) == PermissionChecker.PERMISSION_GRANTED
-        } else {
-            backgroundLocationGranted = true // Not required on older versions
-        }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             activityRecognitionGranted = ContextCompat.checkSelfPermission(
                 context, Manifest.permission.ACTIVITY_RECOGNITION
             ) == PermissionChecker.PERMISSION_GRANTED
         } else {
-            activityRecognitionGranted = true // Not required on older versions
+            backgroundLocationGranted = locationPermissionGranted
+            activityRecognitionGranted = true
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -68,7 +129,7 @@ fun PermissionsScreen(
                 context, Manifest.permission.POST_NOTIFICATIONS
             ) == PermissionChecker.PERMISSION_GRANTED
         } else {
-            notificationsGranted = true // Not required on older versions
+            notificationsGranted = true
         }
     }
 
@@ -141,28 +202,33 @@ fun PermissionsScreen(
         notificationsGranted
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(scrollState)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    val content = @Composable {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(scrollState)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         // Header
         Text(
-            text = "Permissions Required",
+            text = if (isManagementMode) "Manage Permissions" else "Permissions Required",
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center
         )
 
-        Text(
-            text = "Trip Tracker needs these permissions to provide accurate driver/passenger detection and trip tracking.",
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        if (!isManagementMode) {
+            Text(
+                text = "Trip Tracker needs these permissions to provide accurate trip tracking and analysis.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Location Permission
         PermissionItem(
@@ -213,96 +279,56 @@ fun PermissionsScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         // Action Buttons
-        if (allPermissionsGranted) {
-            Button(
-                onClick = onPermissionsGranted,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Continue to Trip Tracker")
-            }
+        if (isManagementMode) {
+            // In management mode, just show a back hint
+            Text(
+                text = "Use the back button to return to settings",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
         } else {
-            OutlinedButton(
-                onClick = {
-                    // Open app settings
-                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                        data = Uri.parse("package:${context.packageName}")
-                    }
-                    context.startActivity(intent)
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Open App Settings")
-            }
-
-            TextButton(
-                onClick = onPermissionsDenied
-            ) {
-                Text("Skip for Now")
+            if (allPermissionsGranted) {
+                Button(
+                    onClick = onPermissionsGranted,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Continue")
+                }
+            } else {
+                OutlinedButton(
+                    onClick = onPermissionsDenied,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Skip for Now")
+                }
             }
         }
     }
-}
+    }
 
-@Composable
-private fun PermissionItem(
-    title: String,
-    description: String,
-    granted: Boolean,
-    onRequestClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (granted)
-                MaterialTheme.colorScheme.primaryContainer
-            else
-                MaterialTheme.colorScheme.surfaceVariant
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium
+    // Use Scaffold in management mode, direct content otherwise
+    if (isManagementMode) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Manage Permissions") },
+                    navigationIcon = {
+                        onBackClick?.let { backClick ->
+                            IconButton(onClick = backClick) {
+                                Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        }
+                    }
                 )
-                if (granted) {
-                    Text(
-                        text = "✓ Granted",
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium
-                    )
-                } else {
-                    Text(
-                        text = "Required",
-                        color = MaterialTheme.colorScheme.error,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
             }
-
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (!granted) {
-                Button(
-                    onClick = onRequestClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Grant Permission")
-                }
+        ) { padding ->
+            Box(modifier = Modifier.padding(padding)) {
+                content()
             }
         }
+    } else {
+        content()
     }
 }
 
