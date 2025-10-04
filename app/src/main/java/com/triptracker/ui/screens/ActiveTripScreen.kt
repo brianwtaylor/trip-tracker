@@ -6,8 +6,11 @@ import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -16,7 +19,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,11 +45,18 @@ import com.triptracker.service.location.domain.usecase.ManageLocationServiceUseC
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.cos
+import kotlin.math.sin
 
 /**
  * Active trip recording screen
@@ -254,6 +266,99 @@ private fun RecordingState(
 }
 
 /**
+ * Speedometer component
+ */
+@Composable
+private fun Speedometer(
+    currentSpeed: Float,
+    modifier: Modifier = Modifier
+) {
+    val mph = (currentSpeed * 3.6f * 0.621371f).coerceIn(0f, 140f) // Convert m/s to mph, cap at 140
+
+    Box(
+        modifier = modifier
+            .size(180.dp)
+            .background(
+                color = Color.Black,
+                shape = CircleShape
+            )
+            .padding(8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Outer speed markings
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val centerX = size.width / 2
+            val centerY = size.height / 2
+            val radius = size.minDimension / 2 - 20
+
+            // Draw speed markings (0 to 140 mph)
+            for (speed in 0..140 step 10) {
+                val angle = (speed / 140f) * 270f - 135f // Start at -135°, end at +135°
+                val angleRad = Math.toRadians(angle.toDouble())
+
+                val startX = centerX + (radius - 15) * cos(angleRad).toFloat()
+                val startY = centerY + (radius - 15) * sin(angleRad).toFloat()
+                val endX = centerX + radius * cos(angleRad).toFloat()
+                val endY = centerY + radius * sin(angleRad).toFloat()
+
+                drawLine(
+                    color = Color.White,
+                    start = Offset(startX, startY),
+                    end = Offset(endX, endY),
+                    strokeWidth = 2f
+                )
+
+                // TODO: Draw speed numbers at major intervals (20, 40, 60, etc.)
+                // This requires TextMeasurer in Compose - will implement later
+            }
+
+            // Draw needle
+            val needleAngle = (mph / 140f) * 270f - 135f
+            val needleAngleRad = Math.toRadians(needleAngle.toDouble())
+            val needleLength = radius - 25
+
+            drawLine(
+                color = Color.Red,
+                start = Offset(centerX, centerY),
+                end = Offset(
+                    centerX + needleLength * cos(needleAngleRad).toFloat(),
+                    centerY + needleLength * sin(needleAngleRad).toFloat()
+                ),
+                strokeWidth = 4f,
+                cap = StrokeCap.Round
+            )
+
+            // Draw center dot
+            drawCircle(
+                color = Color.Red,
+                radius = 8f,
+                center = Offset(centerX, centerY)
+            )
+        }
+
+        // Digital speed display in center
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "%.0f".format(mph),
+                style = MaterialTheme.typography.displaySmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            )
+            Text(
+                text = "MPH",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.White.copy(alpha = 0.7f)
+                )
+            )
+        }
+    }
+}
+
+/**
  * Trip statistics grid during recording
  */
 @Composable
@@ -279,18 +384,23 @@ private fun TripStatsGrid(state: ActiveTripState.Recording) {
             )
         }
 
-        // Speed and Location Points
+        // Speedometer and Location Points
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            TripStatCard(
-                iconText = "🚗",
-                title = "Avg Speed",
-                value = formatSpeed(state.averageSpeedKmh),
-                modifier = Modifier.weight(1f)
-            )
+            // Speedometer takes up 2/3 of the width
+            Box(
+                modifier = Modifier.weight(2f),
+                contentAlignment = Alignment.Center
+            ) {
+                Speedometer(
+                    currentSpeed = state.averageSpeedKmh / 3.6f // Convert km/h back to m/s for speedometer
+                )
+            }
 
+            // Location count takes up 1/3 of the width
             TripStatCard(
                 iconText = "📍",
                 title = "Locations",
@@ -548,11 +658,8 @@ private fun formatDuration(durationMs: Long): String {
 }
 
 private fun formatDistance(distanceKm: Float): String {
-    return if (distanceKm < 1f) {
-        "${"%.0f".format(distanceKm * 1000)}m"
-    } else {
-        "${"%.1f".format(distanceKm * 0.621371)}mi"
-    }
+    val miles = distanceKm * 0.621371 // Convert km to miles
+    return "${"%.1f".format(miles)} miles"
 }
 
 private fun formatSpeed(speedKmh: Float): String {
@@ -574,6 +681,7 @@ class ActiveTripViewModel @Inject constructor(
     private var currentTripId: String? = null
     private var startTime: Long = 0
     private var locationTrackingJob: Job? = null
+    private var durationUpdateJob: Job? = null
     private val tripLocations = mutableListOf<LocationEntity>()
     private var lastLocation: android.location.Location? = null
     private var totalDistance: Double = 0.0
@@ -599,6 +707,21 @@ class ActiveTripViewModel @Inject constructor(
             detectedRole = UserRole.UNKNOWN,
             roleConfidence = 0f
         )
+
+        // Start duration update timer
+        durationUpdateJob = viewModelScope.launch {
+            while (true) {
+                delay(1000) // Update every second
+                val currentTime = System.currentTimeMillis()
+                val duration = currentTime - startTime
+
+                // Update duration in current state if it's recording
+                val currentState = _state.value
+                if (currentState is ActiveTripState.Recording) {
+                    _state.value = currentState.copy(durationMs = duration)
+                }
+            }
+        }
 
         // Start location tracking
         locationTrackingJob = viewModelScope.launch {
@@ -687,6 +810,10 @@ class ActiveTripViewModel @Inject constructor(
     fun stopTrip() {
         _state.value = ActiveTripState.Saving
 
+        // Stop duration update timer
+        durationUpdateJob?.cancel()
+        durationUpdateJob = null
+
         // Stop location tracking
         locationTrackingJob?.cancel()
         locationTrackingJob = null
@@ -733,6 +860,7 @@ class ActiveTripViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
+        durationUpdateJob?.cancel()
         locationTrackingJob?.cancel()
         locationRepository.stopLocationUpdates()
     }
